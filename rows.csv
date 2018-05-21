@@ -1,0 +1,45 @@
+EQ_SQL_Statements.id,EQ_SQL_Statements.Program,EQ_SQL_Statements.Category,EQ_SQL_Statements.SubCategory,EQ_SQL_Statements.Description,EQ_SQL_Statements.GraphType,EQ_SQL_Statements.SQL_Lite,EQ_SQL_Statements.MYSQL,EQ_SQL_Statements.ORACLE,EQ_SQL_Statements.MSSQL,EQ_SQL_Statements.GraphName,EQ_SQL_Statements.CatNames,EQ_SQL_Statements.Title,EQ_SQL_Statements.STitle,EQ_SQL_Statements.YTitle
+1,FND,SETUP,SETUP01,,,,"select S.BaseCurrency BASECURRENCY , C.Code BASECURRENCYCODE 
+from EQ_System_Setup S , EQ_Currencies C where S.BaseCurrency= C.id                                                                                     
+                                                                                                                              ",,,,,,,
+2,EVA,LEG,LEG01,,column,,"select distinct LCR.CostItem from EQ_Leg_Var_Cost_Rules LCR
+where LCR.Leg=$1$ 
+union
+select distinct LCR1.CostItem from EQ_Legs_Addition LA , EQ_Leg_Var_Cost_Rules LCR1 where LA.Leg=$1$
+and LA.Addleg= LCR1.Leg and LCR1.IncludeOnCopy='T'       ",,,,,,,
+3,EVA,COSTRULE,COSTRULE01,,,,"select CR.Amount , CUR.name CurrencyName ,CR.Currency ,VCI.Name CostItemName , VCI.AmountType ,VCI.Category from EQ_Cost_Rules CR , 
+EQ_Variable_Cost_Items VCI ,EQ_Currencies CUR
+where VCI.id=CR.CostItem 
+and CUR.id=CR.Currency
+and CR.CostItem = $1$
+and DATE_FORMAT(EndEffectiveDate, '%Y-%m-%d') >= $8$
+and DATE_FORMAT(StartEffectiveDate, '%Y-%m-%d')<= $8$
+and (CR.ContainerType=$6$ or CR.ContainerType=$7$ )
+and (CR.EF ='X' or CR.EF=$3$)
+and (CR.ContainerSize='X' or CR.ContainerSize=$5$)
+   order by CR.EvaluationOrder",,,,,,,
+4,FND,GRAPH,G001,,line,," select SHC.name NAME ,(IFNULL(SHC.OwnedShips,0) + IFNULL(SHC.LeasedShips,0)) TOTSH ,(IFNULL(SHC.OwnedTeus,0)  + IFNULL
+
+(SHC.LeasedTeus,0))/1000 TOTTEUS
+  from EQ_Shipping_Companies SHC order by (IFNULL(SHC.OwnedShips,0) + IFNULL(SHC.LeasedShips,0)) desc      ",,,,"TOTALSHIPS,TOTALTEUS",,,
+5,FND,GRAPH,G002,,column,,"select C.name NAME ,sum(IFNULL(VS.totalfreight,0)) TOTFR , sum(IFNULL(VS.totalcharges,0)) TOTCH , sum(IFNULL(VS.totalexpenses,0)) TOTEXP , sum(IFNULL(VS.totalnor,0)) TOTNOR from EQ_Voyage_Stretches VS , EQ_Commodities C where C.id=VS.commodity and VS.voyage=$1$  group by C.name",,,,"TOTALFR,TOTALCH,TOTEXP,TOTNOR",,,
+6,FND,CURRENCY,CUR01,,,,"select max(DATE_FORMAT(R.RateDate,'%Y-%m-%d')) EffDate , count(1) totrec from 
+EQ_Curr_Exchange_Rates R where R.currency=$1$ and DATE_FORMAT(R.RateDate, '%Y-%m-%d') <= $2$
+                                                         ",,,,,,,
+7,FND,CURRENCY,CUR02,,,,"select Rate from EQ_Curr_Exchange_Rates R where DATE_FORMAT(R.RateDate,'%Y-%m-%d') = $2$ and R.Currency=$1$
+                                                                                                                                                        
+                             ",,,,,,,
+8,FND,GRAPH,G003,Cost and Revenue items for a given voyage,column,,"select concat(ves.VesselCode,'/',VoyageNumber ) VesselVoyage ,sum(TotalFreight) FREIGHT,sum(TotalCharges) CHARGES ,sum(TotalVarExpenses) VAREXP ,
+ sum(TotalVarLoading)   LOADING,sum(TotalVarDischarge) DISCHARGE,sum(TotalVarTranshipment) Transhipemnt,sum(TotalVarLT) LANDTRANSPORT ,sum(TotalVarFeeding) FEEDING,sum(TotalVarCommission),sum(TotalVarRail),sum(TotalVarOthers),sum(TotalNOR)
+ from EQ_Voyages voy , EQ_Vessels  ves
+where voy.Vessel = ves.id
+and voy.id =$1$",,,Cost and Revenue Items for a Given Voyage,"FREIGHT,CHARGES,VAREXP ,LOADING,DISCHARGE,TRANSHIPMENT,LAND TRANSPORT , FEEDING ,COMMISSION , RAIL TRANSPORT,VAROTHER,NET OF OPERATION",Cost and Revenue items,,$
+9,FND,GRAPH,G004,Voyages Financial Results fro  a given Accounting Year,line,,"select concat(ves.VesselCode,'/',VoyageNumber,""/"",voy.EndDate ) VesselVoyage ,sum(TotalFreight) FREIGHT,sum(TotalCharges) CHARGES ,sum(TotalVarExpenses) VAREXP ,
+ sum(TotalVarLoading)   LOADING,sum(TotalVarDischarge) DISCHARGE,sum(TotalVarTranshipment) TRANSHIPMENT,sum(TotalVarLT) LANDTRANSPORT ,sum(TotalVarFeeding) FEEDING,sum(TotalVarCommission),sum(TotalVarRail),sum(TotalVarOthers),sum(TotalNOR),sum(TotalNetResult)
+ from EQ_Voyages voy , EQ_Vessels  ves , EQ_Lines_Acc_Years yr
+where voy.Vessel = ves.id
+and voy.Line =yr.Line
+and substring(voy.EndDate,1,4)=yr.AccountingYear
+and yr.id=$1$
+group by concat(ves.VesselCode,'/',VoyageNumber )
+order by voy.StartDate",,,,"FREIGHT,CHARGES,VAREXP ,LOADING,DISCHARGE,TRANSHIPMENT,LAND TRANSPORT , FEEDING ,COMMISSION , RAIL TRANSPORT,VAROTHER,NET OF OPERATION,NET RESULT",,,
